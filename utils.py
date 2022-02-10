@@ -9,6 +9,7 @@ from sklearn.metrics.cluster import adjusted_rand_score
 def df_preparation(df, task='wiki-wiki'):
 
     df = df.iloc[df['positions'].dropna().index]
+    df['gold_sense_id'] = df['gold_sense_id'].apply(str)
     df['positions'] = df['positions'].apply(lambda x: x.split(','))
     df['positions'] = df['positions'].apply(lambda x: x[0].split('-'))
     df[df['context'].apply(lambda x: len(x.split('.'))) != 1]
