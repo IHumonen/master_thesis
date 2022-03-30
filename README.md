@@ -1,1 +1,11 @@
-# master_thesis
+WSI + GNN
+=============================================
+
+Some description
+
+Source data
+-----------
+
+
+License and Citation
+--------------------
