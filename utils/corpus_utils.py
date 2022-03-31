@@ -1,6 +1,7 @@
 import pymorphy2
 import torch
 
+from corus import load_lenta2
 from razdel import tokenize
 from torch_geometric.data import Data
 
@@ -43,8 +44,17 @@ class CorpusMaker():
     def texts2tokens(self, raw_texts, create_dicts=True):
         if create_dicts:
             unique_tokens = set()
+        if type(raw_texts) == list:
+            iterator = raw_texts
+        elif raw_texts == 'lenta':
+            path = './data/lenta-ru-news.csv.bz2'
+            iterator = load_lenta2(path)
+
         texts = []
-        for text in raw_texts:
+        for text in iterator:
+            if raw_texts == 'lenta':
+                text = text.text
+
             if self.tokenizer is not None:
                 tokenized = self.tokenizer(text)
             else:
