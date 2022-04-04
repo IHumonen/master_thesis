@@ -37,6 +37,8 @@ def masking(context, positions, mask_string='<mask>'):
         else:
             with_mask += symbol
 
+    return with_mask
+
 #only for models woith tokenizers
 def get_word_location(target, tokens):
     current = ''
