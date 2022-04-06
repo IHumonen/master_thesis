@@ -41,7 +41,7 @@ class CorpusMaker():
 
         self.window_size = window_size
        
-    def texts2tokens(self, raw_texts, create_dicts=True):
+    def texts2tokens(self, raw_texts, create_dicts=True, texts_number=10000, print_every=10):
         if create_dicts:
             unique_tokens = set()
         if type(raw_texts) == list:
@@ -51,25 +51,32 @@ class CorpusMaker():
             iterator = load_lenta2(path)
 
         texts = []
+        i = 0
         for text in iterator:
-            if raw_texts == 'lenta':
-                text = text.text
+            if i < texts_number:
+                if i % print_every == 0:
+                    print(i)
+                i+=1
+                if raw_texts == 'lenta':
+                    text = text.text
 
-            if self.tokenizer is not None:
-                tokenized = self.tokenizer(text)
+                if self.tokenizer is not None:
+                    tokenized = self.tokenizer(text)
+                else:
+                    tokenized = raw_texts
+                if self.morpher is not None:
+                    lemmas = []
+                    for token in tokenized:
+                        lemma, pos = self.morpher(token)
+                        if pos in ['NOUN', 'INFN', 'VERB', 'ADJF']:
+                            lemmas.append(lemma)
+                            if create_dicts:
+                                unique_tokens.add(lemma)
+                    texts.append(lemmas)
+                else:
+                    texts.append(tokenize)
             else:
-                tokenized = raw_texts
-            if self.morpher is not None:
-                lemmas = []
-                for token in tokenized:
-                    lemma, pos = self.morpher(token)
-                    if pos in ['NOUN', 'INFN', 'VERB', 'ADJF']:
-                        lemmas.append(lemma)
-                        if create_dicts:
-                            unique_tokens.add(token)
-                texts.append(lemmas)
-            else:
-                texts.append(tokenize)
+                break
 
         if create_dicts:    
             token2idx = dict(zip(unique_tokens, range(len(unique_tokens))))
