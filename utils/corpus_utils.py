@@ -16,8 +16,7 @@ class Morpher:
         self.cash = dict()
         self.freq = defaultdict(int)
 
-    def __call__(self, word):
-        self.freq[word] += 1    
+    def __call__(self, word):   
         if word in self.cash:
             return self.cash[word]
         else:
@@ -26,8 +25,8 @@ class Morpher:
             pos = full_info.tag.POS
             self.cash[word] = (lemma, pos)
             return (lemma, pos)
-    def max_freq():
-        return max(self.freq.values)
+    def max_freq(self):
+        return max(self.freq.values())
 
 class Corpus():
     """a container for edges and token-index dictionaries"""
@@ -77,6 +76,7 @@ class CorpusMaker():
                     for token in tokenized:
                         lemma, pos = self.morpher(token)
                         if pos in ['NOUN', 'INFN', 'VERB', 'ADJF']:
+                            self.morpher.freq[lemma] += 1 
                             lemmas.append(lemma)
 
                     texts.append(lemmas)
@@ -85,19 +85,25 @@ class CorpusMaker():
             else:
                 break
 
-        if create_dicts:  
-
-            if freq_threshold < 1: #type float
-                freq_threshold = int(freq_threshold * self.morpher.max_freq())
-            else: #type int
-                pass
+        if create_dicts:
 
             df = pd.DataFrame({'word' : self.morpher.freq.keys(), 'freq' : self.morpher.freq.values()})
-            df = df[df['freq'] <= freq_threshold].reset_index()
+            print(f'{df.shape[0]} вершин было')
+            
+            if freq_threshold < 1: #type float
+                quantile = 1 - freq_threshold
+                freq_threshold = df.quantile(q=quantile)['freq']
+            else: #type int
+                pass
+            print(f'порог {freq_threshold}')
+            
+            df = df[df['freq'] > freq_threshold].reset_index()
+            df.to_csv('corpus_freq.csv')
 
             token2idx = dict(zip(df['word'], df.index))
+            idx2token = dict(zip(df.index, df['word']))
 
-            print(f'{max(df.index)} вершин' )
+            print(f'{df.shape[0]} вершин стало')
 
             return texts, token2idx, idx2token
         else:
