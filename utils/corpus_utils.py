@@ -1,6 +1,10 @@
 import pymorphy2
 import torch
 
+import pandas as pd
+
+from collections import defaultdict
+
 from corus import load_lenta2
 from razdel import tokenize
 from torch_geometric.data import Data
@@ -10,8 +14,10 @@ class Morpher:
     def __init__(self, pymorphy_morpher):
         self.morpher = pymorphy_morpher
         self.cash = dict()
-        
-    def __call__(self, word):        
+        self.freq = defaultdict(int)
+
+    def __call__(self, word):
+        self.freq[word] += 1    
         if word in self.cash:
             return self.cash[word]
         else:
@@ -20,6 +26,8 @@ class Morpher:
             pos = full_info.tag.POS
             self.cash[word] = (lemma, pos)
             return (lemma, pos)
+    def max_freq():
+        return max(self.freq.values)
 
 class Corpus():
     """a container for edges and token-index dictionaries"""
@@ -41,14 +49,14 @@ class CorpusMaker():
 
         self.window_size = window_size
        
-    def texts2tokens(self, raw_texts, create_dicts=True, texts_number=10000, print_every=10):
-        if create_dicts:
-            unique_tokens = set()
+    def texts2tokens(self, raw_texts, create_dicts=True, freq_threshold=0.7, texts_number=10000, print_every=10):
+
         if type(raw_texts) == list:
             iterator = raw_texts
         elif raw_texts == 'lenta':
             path = './data/lenta-ru-news.csv.bz2'
             iterator = load_lenta2(path)
+
 
         texts = []
         i = 0
@@ -70,17 +78,26 @@ class CorpusMaker():
                         lemma, pos = self.morpher(token)
                         if pos in ['NOUN', 'INFN', 'VERB', 'ADJF']:
                             lemmas.append(lemma)
-                            if create_dicts:
-                                unique_tokens.add(lemma)
+
                     texts.append(lemmas)
                 else:
                     texts.append(tokenize)
             else:
                 break
 
-        if create_dicts:    
-            token2idx = dict(zip(unique_tokens, range(len(unique_tokens))))
-            idx2token = dict(zip(range(len(unique_tokens)), unique_tokens))
+        if create_dicts:  
+
+            if freq_threshold < 1: #type float
+                freq_threshold = int(freq_threshold * self.morpher.max_freq())
+            else: #type int
+                pass
+
+            df = pd.DataFrame({'word' : self.morpher.freq.keys(), 'freq' : self.morpher.freq.values()})
+            df = df[df['freq'] <= freq_threshold].reset_index()
+
+            token2idx = dict(zip(df['word'], df.index))
+
+            print(f'{max(df.index)} вершин' )
 
             return texts, token2idx, idx2token
         else:
@@ -106,6 +123,8 @@ class CorpusMaker():
             print('empty ===========================')
         edge_index = torch.tensor(edges).transpose(0, 1)
         graph = Data(x = x.long(), edge_index = edge_index)
+
+        print(f'{len(edges)} рёбер' )
 
         return Corpus(graph, token2idx, idx2token) 
 
