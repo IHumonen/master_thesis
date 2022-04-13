@@ -6,6 +6,7 @@ import pandas as pd
 from collections import defaultdict
 
 from corus import load_lenta2
+import gensim.downloader
 from razdel import tokenize
 from torch_geometric.data import Data
 
@@ -25,8 +26,8 @@ class Morpher:
             pos = full_info.tag.POS
             self.cash[word] = (lemma, pos)
             return (lemma, pos)
-    def max_freq(self):
-        return max(self.freq.values())
+    # def max_freq(self):
+    #     return max(self.freq.values())+1
 
 class Corpus():
     """a container for edges and token-index dictionaries"""
@@ -34,6 +35,21 @@ class Corpus():
         self.graph = graph
         self.token2idx = token2idx
         self.idx2token = idx2token
+        self.w2v_vectors = None
+        
+    def create_w2v_vectors(self, w2v_path='word2vec-ruscorpora-300'):
+        w2v = gensim.downloader.load(w2v_path)
+        
+        w2v_size = w2v[0].shape[0]
+        max_id = max(self.token2idx.values())+1
+        w2v_vectors = torch.zeros((max_id, w2v_size))
+        for key in w2v.key_to_index.keys():
+            word = key.split('_')[0]
+            if word in self.token2idx:
+                index = self.token2idx[word]
+                w2v_vectors[index] = torch.tensor(w2v[key])
+
+        self.w2v_vectors = w2v_vectors
 
 class CorpusMaker():
     """creates a Corpus objects from a collection of texts"""

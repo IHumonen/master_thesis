@@ -7,6 +7,7 @@ import pandas as pd
 
 def train(model, 
             data,
+            indices,
             idx2token, 
             optimizer, 
             criterion,
@@ -20,7 +21,10 @@ def train(model,
     
     optimizer.zero_grad()
 
-    predictions, ys = model(data.to(device)).to(device), torch.tensor(list(idx2token.keys())).to(device)
+    predictions = torch.index_select(model(data.to(device)).to(device), 0, indices)
+    ys = torch.index_select(torch.tensor(list(idx2token.keys())).to(device), 0, indices)
+    
+    print(predictions.shape, ys.shape)
 
     loss = criterion(predictions.view(-1, predictions.size(-1)), ys.view(-1))
     loss.backward()
@@ -34,6 +38,7 @@ def train(model,
 
 def evaluate(model, 
                 data,
+                indices,
                 idx2token, 
                 criterion, 
                 epoch,
@@ -48,7 +53,8 @@ def evaluate(model,
 
     with torch.no_grad():
 
-        predictions, ys = model(data.to(device)).to(device), torch.tensor(list(idx2token.keys())).to(device)
+        predictions = torch.index_select(model(data.to(device)).to(device), 0, indices)
+        ys = torch.index_select(torch.tensor(list(idx2token.keys())).to(device), 0, indices)
 
         loss = criterion(predictions.view(-1, predictions.size(-1)), ys.view(-1))
 
