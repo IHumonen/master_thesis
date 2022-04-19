@@ -42,11 +42,23 @@ class CustomSAGE(nn.Module):
         probs = graph['x']
         
         return probs
+
+class PretrainedEmbeds(nn.Module):
+    def __init__(self, vectors, output_dim):
+        super().__init__()
+        self.emb = nn.Embedding.from_pretrained(vectors, padding_idx=0)
+        self.lin = nn.Linear(vectors.shape[1], output_dim, bias=False)
+
+    def forward(self, indices):
+        pretrained = self.emb(indices)
+        x = self.lin(pretrained)
+        
+        return x
     
 def embeddings_mode(emb_type, size=None, w=None):
     if emb_type == 'onehot':
         return nn.Embedding(*size)  #(self.vocab_size, self.hidden_dim)
     if emb_type == 'w2v':
-        return nn.Embedding.from_pretrained(w, padding_idx=0)
+        return PretrainedEmbeds(w, size[1])
     if emb_type == 'bert':
         print('not implemented yet')

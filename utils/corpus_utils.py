@@ -78,7 +78,7 @@ class CorpusMaker():
         for text in iterator:
             if i < texts_number:
                 if i % print_every == 0:
-                    print(i)
+                    print(f'step {i}')
                 i+=1
                 if raw_texts == 'lenta':
                     text = text.text
@@ -150,12 +150,12 @@ class CorpusMaker():
 
         return Corpus(graph, token2idx, idx2token) 
 
-    def create_graph(self, raw_texts, dicts=None):
+    def create_graph(self, raw_texts, dicts=None, print_every=10):
         if dicts is not None:
             token2idx, idx2token = dicts[0], dicts[1]
             tokens = self.texts2tokens(raw_texts, create_dicts=False)
         else:
-            tokens, token2idx, idx2token = self.texts2tokens(raw_texts, create_dicts=True)
+            tokens, token2idx, idx2token = self.texts2tokens(raw_texts, create_dicts=True, print_every=print_every)
 
         return self.tokens2graph(tokens, token2idx, idx2token)
     
